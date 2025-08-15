@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Evaluating Koopman representation generalizability for transformer-based chaos prediction and control">
+  <meta property="og:title" content="On the Generalisation of Koopman Representations for Chaotic System Control"/>
+  <meta property="og:description" content="A thesis exploring multi-stage training protocols for transformer-based chaos prediction and control using Koopman autoencoders"/>
+  <meta property="og:url" content="https://kikis.github.io/thesis_project/Thesis_page"/>
+  <meta property="og:image" content="static/images/thesis_banner.png" />
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+
+  <meta name="twitter:title" content="Koopman Representations for Chaotic System Control">
+  <meta name="twitter:description" content="Multi-stage training protocols for transformer-based chaos prediction and control">
+  <meta name="twitter:image" content="static/images/thesis_banner.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="keywords" content="Koopman theory, chaos prediction, transformer, control theory, deep learning, dynamical systems">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>On the Generalisation of Koopman Representations for Chaotic System Control</title>
+  <link rel="icon" type="image/svg+xml" href="static/images/favicon.svg">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
+</head>
+<body>
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">On the Generalisation of Koopman Representations for Chaotic System Control</h1>
+            <div class="is-size-5 publication-authors">
+              <!-- <span class="author-block"> -->
+              <!--   <a href="#" target="_blank">Kyriakos Hjikakou</a>,</span> -->
+              <!--   <span class="author-block"> -->
+              <!--     <a href="#" target="_blank">Matthia Sabatelli</a> -->
+              <!--   </span> -->
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">University of Groningen<br></span>
+            </div>
+
+      <!--       <div class="column has-text-centered"> -->
+      <!--         <div class="publication-links"> -->
+      <!--         <span class="link-block"> -->
+      <!--           <a href="https://github.com/kikisprdx/koopman-gen-training" target="_blank" -->
+      <!--           class="external-link button is-normal is-rounded is-dark"> -->
+      <!--           <span class="icon"> -->
+      <!--             <i class="fab fa-github"></i> -->
+      <!--           </span> -->
+      <!--           <span>Code</span> -->
+      <!--         </a> -->
+      <!--       </span> -->
+      <!--   </div> -->
+      <!-- </div> -->
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- Abstract -->
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            This paper investigates the generalisability of Koopman-based representations for chaotic dynamical systems, focusing on their transferability across prediction and control tasks. Using the Lorenz system as a testbed, we propose a three-stage methodology: learning Koopman embeddings through autoencoding, pre-training a transformer on next-state prediction, and fine-tuning for safety-critical control. Our results show that Koopman embeddings outperform both standard and physics-informed PCA baselines, achieving accurate and data-efficient performance. Notably, fixing the pre-trained transformer weights during fine-tuning leads to no performance degradation, indicating that the learned representations capture reusable dynamical structure rather than task-specific patterns. These findings support the use of Koopman embeddings as a foundation for multi-task learning in physics-informed machine learning.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Results -->
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container">
+      <div class="has-text-centered">
+        <video controls autoplay muted loop style="width: 100%; height: auto;">
+          <source src="static/images/safety_values_koopman_traj0.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Method -->
+<section class="hero is-small is-light">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Architecture Overview</h2>
+          <div class="content has-text-justified">
+            <p>
+              <strong>Stage 1:</strong> <strong>Koopman Autoencoder Training</strong><br>
+              We train a Koopman-based autoencoder to encode raw 3D states into Koopman space (32D). This is done by teaching the model through system evolution.
+            </p>
+            
+            <p>
+              <strong>Stage 2:</strong> <strong>Transformer Pre-training (Task A)</strong><br>
+              A decoder transformer model is trained on encoded states to perform next-state prediction.
+            </p>
+            
+            <p>
+              <strong>Stage 3:</strong> <strong>Safety Function Fine-tuning (Task B)</strong><br>
+              The transformer is then frozen, where a multi-layer perceptron (MLP) safety head takes the last hidden layer from the transformer after processing a sequence and the current 3D state, to produce a safety value. This safety value represents the minimum control required to maintain the current trajectory within a predefined region Q, which encompasses the right butterfly wing of the Lorenz system.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Gallery -->
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Gallery</h2>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Video carousel with integrated legends - full width -->
+    <div class="container">
+      <div id="results-carousel" class="carousel results-carousel">
+        <div class="item">
+          <!-- Safety Values Legend -->
+          <div style="background: #f8f9fa; padding: 1rem; margin: 0 0 2rem 0; border-radius: 8px; border-left: 4px solid #00b894; text-align: left;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #2d3436; font-weight: 600;">Safety Values Legend</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.9rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 20px; border: 2px solid #00b894; background: transparent; border-radius: 3px;"></div>
+                <span><strong>Green wireframe:</strong> Safety region Q boundary</span>
+              </div>
+            </div>
+          </div>
+          <video autoplay muted loop style="width: 100%; height: auto;" onmouseover="this.controls=true" onmouseout="this.controls=false">
+            <source src="static/images/safety_values_koopman_traj24.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-four-fifths">
+                <h2 class="subtitle has-text-centered">
+                  Safety Value Prediction: Trajectories colored by predicted value comparing Koopman Frozen to ground truth values
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item">
+          <!-- Control Actions Legend -->
+          <div style="background: #f8f9fa; padding: 1rem; margin: 0 0 2rem 0; border-radius: 8px; border-left: 4px solid #a29bfe; text-align: left;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #2d3436; font-weight: 600;">Control Actions Legend</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.9rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 10px solid #e84393; transform: rotate(-45deg);"></div>
+                <span><strong>Magenta arrows:</strong> Control interventions</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 3px; background: #00b894; border-radius: 2px;"></div>
+                <span><strong>Green trajectory:</strong> Inside safety region Q</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 3px; background: #e74c3c; border-radius: 2px;"></div>
+                <span><strong>Red trajectory:</strong> Outside safety region Q</span>
+              </div>
+            </div>
+          </div>
+          <video autoplay muted loop style="width: 100%; height: auto; aspect-ratio: 2640/960;" onmouseover="this.controls=true" onmouseout="this.controls=false">
+            <source src="static/images/control_actions_koopman_traj24.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-four-fifths">
+                <h2 class="subtitle has-text-centered">
+                  Control actions visualisation: Control interventions shown with magenta arrows
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item">
+          <!-- Safety Values Legend -->
+          <div style="background: #f8f9fa; padding: 1rem; margin: 0 0 2rem 0; border-radius: 8px; border-left: 4px solid #00b894; text-align: left;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #2d3436; font-weight: 600;">Safety Values Legend</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.9rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 20px; border: 2px solid #00b894; background: transparent; border-radius: 3px;"></div>
+                <span><strong>Green wireframe:</strong> Safety region Q boundary</span>
+              </div>
+            </div>
+          </div>
+          <video autoplay muted loop style="width: 100%; height: auto;" onmouseover="this.controls=true" onmouseout="this.controls=false">
+            <source src="static/images/safety_values_koopman_traj0.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-four-fifths">
+                <h2 class="subtitle has-text-centered">
+                  Safety Value Prediction: Trajectories colored by predicted value comparing Koopman Frozen to ground truth values
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item">
+          <!-- Control Actions Legend -->
+          <div style="background: #f8f9fa; padding: 1rem; margin: 0 0 2rem 0; border-radius: 8px; border-left: 4px solid #a29bfe; text-align: left;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #2d3436; font-weight: 600;">Control Actions Legend</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.9rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 10px solid #e84393; transform: rotate(-45deg);"></div>
+                <span><strong>Magenta arrows:</strong> Control interventions</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 3px; background: #00b894; border-radius: 2px;"></div>
+                <span><strong>Green trajectory:</strong> Inside safety region Q</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 3px; background: #e74c3c; border-radius: 2px;"></div>
+                <span><strong>Red trajectory:</strong> Outside safety region Q</span>
+              </div>
+            </div>
+          </div>
+          <video autoplay muted loop style="width: 100%; height: auto; aspect-ratio: 2640/960;" onmouseover="this.controls=true" onmouseout="this.controls=false">
+            <source src="static/images/control_actions_koopman_traj0.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-four-fifths">
+                <h2 class="subtitle has-text-centered">
+                  Control actions visualisation: Control interventions shown with magenta arrows
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item">
+          <!-- Safety Values Legend -->
+          <div style="background: #f8f9fa; padding: 1rem; margin: 0 0 2rem 0; border-radius: 8px; border-left: 4px solid #00b894; text-align: left;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #2d3436; font-weight: 600;">Safety Values Legend</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.9rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 20px; border: 2px solid #00b894; background: transparent; border-radius: 3px;"></div>
+                <span><strong>Green wireframe:</strong> Safety region Q boundary</span>
+              </div>
+            </div>
+          </div>
+          <video autoplay muted loop style="width: 100%; height: auto;" onmouseover="this.controls=true" onmouseout="this.controls=false">
+            <source src="static/images/safety_values_koopman_traj7.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-four-fifths">
+                <h2 class="subtitle has-text-centered">
+                  Safety Value Prediction: Trajectories colored by predicted value comparing Koopman Frozen to ground truth values
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item">
+          <!-- Control Actions Legend -->
+          <div style="background: #f8f9fa; padding: 1rem; margin: 0 0 2rem 0; border-radius: 8px; border-left: 4px solid #a29bfe; text-align: left;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #2d3436; font-weight: 600;">Control Actions Legend</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.9rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 10px solid #e84393; transform: rotate(-45deg);"></div>
+                <span><strong>Magenta arrows:</strong> Control interventions</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 3px; background: #00b894; border-radius: 2px;"></div>
+                <span><strong>Green trajectory:</strong> Inside safety region Q</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 3px; background: #e74c3c; border-radius: 2px;"></div>
+                <span><strong>Red trajectory:</strong> Outside safety region Q</span>
+              </div>
+            </div>
+          </div>
+          <video autoplay muted loop style="width: 100%; height: auto; aspect-ratio: 2640/960;" onmouseover="this.controls=true" onmouseout="this.controls=false">
+            <source src="static/images/control_actions_koopman_traj7.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-four-fifths">
+                <h2 class="subtitle has-text-centered">
+                  Control actions visualisation: Control interventions shown with magenta arrows
+                </h2>
+              </div>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Safety Value Analysis -->
+<section class="hero is-small is-light">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Results</h2>
+          
+          <div class="content has-text-justified">
+            <p>
+              Below in the table, we can see our results, where our Koopman frozen model <strong>performed best across MSE, MAE and R² metrics</strong>. This performance <strong>remains consistent whether the transformer backbone is frozen or not</strong>. The Error Accumulation charts reveal that Koopman frozen also produces <strong>fewer concentrated errors</strong> compared to the PCA baseline, which, despite low MSE scores, shows considerable dark spots indicating <strong>high sensitivity at unstable regions</strong> of the Lorenz system.
+            </p>
+            
+            <p>
+              The previous animations demonstrate safety value predictions from our frozen Koopman-transformer model against ground truth values computed via a recursive algorithm. To illustrate the practical utility of these predictions, we implement a simple controller that applies interventions when trajectories approach or exit region Q, using predicted safety values to determine <strong>when and how much control is needed</strong>.</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Performance Table and Analysis (White background, no header) -->
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+        
+        <!-- Performance Table -->
+        <div style="margin-top: 2rem; display: flex; flex-direction: column; align-items: center;">
+          <div style="overflow-x: auto; max-width: 100%;">
+            <table style="border-collapse: collapse; font-size: 0.85rem;">
+              <thead>
+                <tr style="background: #f8f9fa;">
+                  <th style="padding: 0.75rem 0.5rem; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600;">Model</th>
+                  <th style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600;">MSE (×10⁻⁴)</th>
+                  <th style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600;">MAE (×10⁻²)</th>
+                  <th style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600;">R²</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="background: #e8f5e8; font-weight: bold;">
+                  <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid #dee2e6;">Koopman Frozen</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid #dee2e6;">3.08 ± 6.55</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid #dee2e6;">1.16 ± 0.53</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid #dee2e6;">0.991 ± 0.089</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                  <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid #dee2e6;">Koopman Unfrozen</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid #dee2e6;">5.59 ± 17.14</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid #dee2e6;">1.20 ± 0.59</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid #dee2e6;">0.989 ± 0.089</td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid #dee2e6;">PCA Physics-Informed</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid #dee2e6;">5.28 ± 8.83</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid #dee2e6;">1.48 ± 0.65</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid #dee2e6;">0.989 ± 0.090</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                  <td style="padding: 0.75rem 0.5rem;">PCA</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center;">16.80 ± 17.93</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center;">2.83 ± 0.98</td>
+                  <td style="padding: 0.75rem 0.5rem; text-align: center;">0.983 ± 0.091</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top: 1rem; font-size: 0.8rem; color: #666; text-align: center; max-width: 800px;">
+            Safety function prediction performance across models mean (μ) ± standard deviations (σ). All metrics were computed on 252 test trajectories within the safety region.
+          </p>
+        </div>
+
+        
+        <!-- L1 Error Analysis -->
+        <div style="margin-top: 2rem;">
+          <div class="has-text-centered">
+            <img src="static/images/l1_accumilation_analysis.png" alt="L1 Error Analysis" style="width: 100%; height: auto;" />
+            <p style="margin-top: 1rem; font-size: 0.8rem; color: #666; text-align: justify;">
+              <strong>Comparative accumulated L1 error across the test dataset.</strong> L1 error is defined as L₁ = |y_true - y_pred|. The figure displays the X–Z projection for four models. Light regions indicate low error; darker regions represent higher error concentrations. Contextual markers denote the boundary of the training region Q (x=0), corresponding to the Lorenz attractor's equilibrium point. Vector lines show mean velocity and direction in each quadrant.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!--Footer-->
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io/" target="_blank">Nerfies</a> project page.
+            We used the source code from <a href="https://neuralmpm.isach.be/" target="_blank">NeuralMPM</a> as our starting point.
+            Many thanks to all the authors for sharing their beautiful templates and source code.
+          </p>
+          <!-- <p> -->
+          <!--   This website is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative Commons Attribution-ShareAlike 4.0 International License</a>. -->
+          <!-- </p> -->
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
